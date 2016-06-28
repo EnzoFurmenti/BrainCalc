@@ -1,9 +1,12 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 $echo "project.xcworkspace">>.gitignore
 $echo "xcuserdata">>.gitignore
 $echo ".DS_Store">>.gitignore
 =======
+=======
+>>>>>>> 817d9ac0a9ad54f8f8eb4a3e26bc927335dae809
 =======
 >>>>>>> 817d9ac0a9ad54f8f8eb4a3e26bc927335dae809
 # Xcode
@@ -72,6 +75,9 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> abe36cb9e0eed695b8a9631810eaad154cfd7f03
+=======
+>>>>>>> 817d9ac0a9ad54f8f8eb4a3e26bc927335dae809
 =======
 >>>>>>> 817d9ac0a9ad54f8f8eb4a3e26bc927335dae809
