@@ -33,8 +33,10 @@ class ViewController: UIViewController {
     @IBAction func apendDigit(sender: UIButton) {
         let digit = sender.currentTitle!
         if isZeroOnDisplay{
-            display.text = digit
-            isZeroOnDisplay = false
+            if digit != "0"{
+                display.text = digit
+                isZeroOnDisplay = false
+            }
         }
         else{
             display.text = display.text! + digit
@@ -53,6 +55,7 @@ class ViewController: UIViewController {
         case "÷":performOperation {$1 / $0}
         case "-":performOperation {$1 - $0}
         case "+":performOperation {$0 + $1}
+        case "√":performOperation {sqrt($0)}
         default:
             NSLog("Error in operate(sender:\(sender.currentTitle))")
             break
@@ -82,5 +85,15 @@ class ViewController: UIViewController {
             enter()
         }
     }
+    
+    //@nonobjc
+    
+   private func performOperation(operation:(Double)->Double){
+        if operandStack.count >= 1{
+            displayValue = operation(operandStack.removeLast())
+            enter()
+        }
+    }
+
 }
 
