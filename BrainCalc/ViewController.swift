@@ -11,6 +11,8 @@ import UIKit
 class ViewController: UIViewController {
 //MARK: -global var-
     var isZeroOnDisplay : Bool = true
+    
+    var brainCalculator = BrainCalc()
     var operandStack = Array <Double> ()
     var displayValue : Double{
     
@@ -45,21 +47,37 @@ class ViewController: UIViewController {
     
     @IBAction func enter() {
         isZeroOnDisplay = true
-        operandStack.append(displayValue)
+        
+        if let result = brainCalculator.pushOperand(displayValue){
+            displayValue = result
+        }else{
+            //error?
+            displayValue = 0 //задание 2
+        }
     }
     
     @IBAction func operate(sender: UIButton) {
-        let operation = sender.currentTitle!
-        switch operation {
-        case "×":performOperation {$0 * $1}
-        case "÷":performOperation {$1 / $0}
-        case "-":performOperation {$1 - $0}
-        case "+":performOperation {$0 + $1}
-        case "√":performOperation {sqrt($0)}
-        default:
-            NSLog("Error in operate(sender:\(sender.currentTitle))")
-            break
+        if !isZeroOnDisplay {
+            enter()
         }
+        if let operation = sender.currentTitle{
+            if let result = brainCalculator.performOperation(operation){
+                displayValue = result
+            }else{
+                //error?
+                displayValue = 0
+            }
+        }
+        
+//        switch operation {
+//        case "×":performOperation {$0 * $1}
+//        case "÷":performOperation {$1 / $0}
+//        case "-":performOperation {$1 - $0}
+//        case "+":performOperation {$0 + $1}
+//        case "√":performOperation {sqrt($0)}
+//        default:
+//            NSLog("Error in operate(sender:\(sender.currentTitle))")
+//            break
         
     }
     
