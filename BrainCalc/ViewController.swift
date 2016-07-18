@@ -33,7 +33,7 @@ class ViewController: UIViewController {
                 isZeroOnDisplay = true
             }
             else{
-                display.text = " "
+                display.text = brainCalculator.getErrorReport()
                 //historyRow.text = historyRow.text! + "error"
             }
         
@@ -65,8 +65,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func enter() {
-        //isZeroOnDisplay = true
-        //historyRow.text = historyRow.text!
+
         if isPiOnRow{
             isZeroOnDisplay = true
             isPiOnRow  = false
@@ -76,7 +75,6 @@ class ViewController: UIViewController {
             if let displayVal = displayValue{
                 if let result = brainCalculator.pushOperand(displayVal){
                     addHistory(brainCalculator.description!)
-                    //isPiOnRow  = false
                     isZeroOnDisplay = true
                     displayValue = result
                 }else{
@@ -113,6 +111,12 @@ class ViewController: UIViewController {
                 display.text = "0"
                 isZeroOnDisplay = true
             }
+        }
+        else
+        {
+                brainCalculator.undoOpStack()
+                addHistory(brainCalculator.description!)
+                isZeroOnDisplay = true
         }
     }
     

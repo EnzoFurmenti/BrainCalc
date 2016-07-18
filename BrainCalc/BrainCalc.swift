@@ -34,7 +34,63 @@ class BrainCalc{
             }
         }
     }
+    
+        
+    var precedence: Int{
+        get{
+            switch self{
+            case .operand(_):
+                return Int.max
+            case .variable(_,_):
+                return Int.max
+            case .operandPi(_,_):
+                return Int.max
+            case .UnaryOperation(_, _):
+                return Int.max
+            case .BinaryOperation(let symbol, _):
+                switch symbol{
+                    case  "-" :
+                        return 1
+                    case  "+" :
+                        return 1
+                    case  "×" :
+                        return 2
+                    case  "÷" :
+                        return 2
+                    default :
+                        return Int.min
+                }
+            }
+        }
     }
+        
+//    var errorReport: String?{
+//        get{
+//            switch self{
+//                case .operand(_):
+//                return nil
+//                case .variable(_,_):
+//                return nil
+//                case .operandPi(_,_):
+//                return nil
+//                case .UnaryOperation(let symbol, _):
+//                    switch symbol{
+//                        case "√":
+//                            if operation == Double -> Double{
+//                                return "100"
+//                            }
+//                        return nil
+//                    }
+//                    return nil
+//                case .BinaryOperation(let symbol, _):
+//                    return nil
+//                
+//            }
+//        }
+//    }
+}
+   private var precedenceOps = [String : Int] ()
+   private var precedenceStack = [Int] ()
    private var opStack = [Op] ()
    private var knownOps = [String : Op] ()
    var variableValues = [String : Double] ()
@@ -43,9 +99,9 @@ class BrainCalc{
             var stack = opStack
             var totalString = String ()
             while !stack.isEmpty {
-                let subTotalString = evaluate1(stack).result!
+                let subTotalString = description(stack, precedence: precedenceStack).result!
                 totalString = subTotalString + totalString
-                stack = evaluate1(stack).remainingOps
+                stack = description(stack, precedence: precedenceStack).remainingOps
             }
             return totalString
         }
@@ -55,6 +111,10 @@ class BrainCalc{
     init (){
         func learnOp (op : Op) {
             knownOps[op.description] = op
+            if op.description == "×" || op.description == "÷" || op.description == "-" || op.description == "+"
+            {
+                precedenceOps[op.description] = op.precedence
+            }
         }
         learnOp(Op.BinaryOperation("×", *))
         learnOp(Op.BinaryOperation("÷", {$1 / $0}))
@@ -79,7 +139,7 @@ class BrainCalc{
     
        func pushOperand(operand: Double) -> Double? {
             opStack.append(Op.operand(operand))
-        
+//            precedenceStack.append(Int.max)
         return evaluate()
     }
     
@@ -87,6 +147,10 @@ class BrainCalc{
         if let operation = knownOps[symbol] {
             opStack.append(operation)
         }
+        if let descriptionValue = precedenceOps[symbol]{
+            precedenceStack.append(descriptionValue)
+        }
+        evaluateAndReportErrors(opStack)
         return evaluate()
     }
     
@@ -125,68 +189,230 @@ class BrainCalc{
     func evaluate() -> Double? {
         let (result, remainder) = evaluate(opStack)
         print("\(opStack) = \(result) with \(remainder) left over")
-        print ("\(description)")
+        //print ("\(description)")
         return result
     }
     
-    private func evaluate1(ops: [Op]) -> (result: String? , remainingOps: [Op]){
-        var resultString = String()
-        var remainingOps = ops
+    
+    
+    private func evaluateAndReportErrors(ops: [Op]) -> (result: Double?, remainingOps: [Op],errorReport : String?){
         if !ops.isEmpty {
+            var remainingOps = ops
             let op = remainingOps.removeLast()
+            
             switch op {
             case .operand(let operand):
-                if operand == M_PI{
-                    return ("", remainingOps)
+                return (operand, remainingOps, nil)
+            case .variable(let symbol, let operation):
+            if operation() == nil{
+                  let errorRep = errorReport(symbol, operand1 : nil, operand2 : nil)
+                  return (operation(), remainingOps, errorRep)
+            }
+            else{
+                  return (operation(), remainingOps, nil)
+            }
+            case .operandPi(_,let operation):
+                return (operation(), remainingOps, nil)
+                
+            case .UnaryOperation(let symbol, let operation):
+                let operandEvaluation = evaluate(remainingOps)
+                if let operand = operandEvaluation.result{
+                    let errorRep = errorReport(symbol, operand1 : operand, operand2 : nil)
+                     return (operation(operand), remainingOps, errorRep)
                 }
-                return ("\(operand)" , remainingOps)
+                else
+                {
+
+                    let errorRep = errorReport (symbol, operand1 : nil, operand2 : nil)
+                      return (nil, remainingOps, errorRep)
+    
+                }
+            case .BinaryOperation(let symbol, let operation):
+                let op1Evaluation = evaluate(remainingOps)
+                if let operand1 = op1Evaluation.result {
+                    let op2Evaluation = evaluate(op1Evaluation.remainingOps)
+                    if let operand2 = op2Evaluation.result{
+                        let errorRep = errorReport (symbol, operand1 : nil, operand2 : nil)
+                          return (operation(operand1,operand2), remainingOps, errorRep)
+                    }
+                }
+                else
+                {
+                 let errorRep = errorReport (symbol, operand1 : nil, operand2 : nil)
+                    return (nil, remainingOps, errorRep)
+                }
+
+            }
+        }
+        return (nil, ops, nil)
+    }
+    
+    private func description(ops: [Op], precedence: [Int]) -> (result: String? , remainingOps: [Op], remainingPrecedence : [Int], remainingPrecedenceValue : Int?)
+    {
+        var resultString = String()
+        var remainingOps = ops
+        var remainingPrecedence = precedence
+        
+        if !ops.isEmpty
+        {
+            let op = remainingOps.removeLast()
+                    switch op {
+            case .operand(let operand):
+                if operand == M_PI{
+                    return ("", remainingOps, remainingPrecedence, nil)
+                }
+                return ("\(operand)" , remainingOps, remainingPrecedence ,nil)
+                        
             case .variable(let variable , _):
-                return (variable , remainingOps)
+                return (variable , remainingOps, remainingPrecedence, nil)
+                        
             case .operandPi(let operandPi , _):
-               return (operandPi , remainingOps)
+               return (operandPi , remainingOps, remainingPrecedence, nil)
+                        
             case .UnaryOperation(let operate , _ ):
-                let operandEvaluation = evaluate1(remainingOps)
+                let operandEvaluation = description(remainingOps, precedence: remainingPrecedence)
                 if let operand = operandEvaluation.result{
                     resultString = operate + "(" + operand + ")"
                 }
                 else{
                     resultString = operate + "?"
                 }
-                return (resultString , operandEvaluation.remainingOps)
+                return (resultString , operandEvaluation.remainingOps, operandEvaluation.remainingPrecedence, nil)
+                        
             case .BinaryOperation(let operate,_):
-                let op1Evaluation = evaluate1(remainingOps)
-                if let operand1 = op1Evaluation.result {
-                    if operand1 != ""{
-                        if operand1 != ""{
-                            resultString = operand1
-                            let op2Evaluation = evaluate1(op1Evaluation.remainingOps)
-                            if let operand2 = op2Evaluation.result{
-                                if operand2 != ""{
-                                    resultString = "(" + operand2 + operate + operand1 + ")"
-                                }
-                                else{
-                                    resultString = operand1 + "?" + ")"
-                                }
+                let currentPrecedenceValue = remainingPrecedence.removeLast()
+                let op1Evaluation = description(remainingOps, precedence: remainingPrecedence)
+                
+                if let operand1 = op1Evaluation.result
+                {
+                    if operand1 != ""
+                    {
+                        if let PrecedenceValue1 = op1Evaluation.remainingPrecedenceValue
+                        {
+                            
+                            if isSetBrackets(currentPrecedenceValue, precedenceValueOp: PrecedenceValue1)
+                            {
+                                resultString = "(" + operand1 + ")"
                             }
-                            return (resultString, op2Evaluation.remainingOps)
+                            else
+                            {
+                                resultString = operand1
+                            }
+                        
+                        }
+                        else
+                        {
+                            resultString = operand1
                         }
                     }
                     else
                     {
-                       resultString = "(" + "?" + "\(operate)" + "?" + ")"
-                        return (resultString, op1Evaluation.remainingOps)
+                        resultString = "(" + "?" + "\(operate)" + "?" + ")"
+                        return (resultString, op1Evaluation.remainingOps, op1Evaluation.remainingPrecedence, currentPrecedenceValue)
+                    }
+                    
+                    let op2Evaluation = description(op1Evaluation.remainingOps, precedence: op1Evaluation.remainingPrecedence)
+
+                    if let operand2 = op2Evaluation.result
+                    {
+                        if operand2 != ""
+                        {
+                            if let PrecedenceValue2 = op2Evaluation.remainingPrecedenceValue
+                            {
+                                if isSetBrackets(currentPrecedenceValue, precedenceValueOp: PrecedenceValue2){
+                                    resultString = "(" + operand2 + ")" + operate + resultString
+                                }
+                                else{
+                                    resultString =  operand2 + operate + resultString
+                                }
+                                
+                                return (resultString, op2Evaluation.remainingOps, op2Evaluation.remainingPrecedence, currentPrecedenceValue)
+                            }
+                            else
+                            {
+                                resultString =  operand2 + operate + resultString
+                                return (resultString, op2Evaluation.remainingOps, op2Evaluation.remainingPrecedence, currentPrecedenceValue)
+                            }
+                        }
+                    }
+                    else
+                    {
+                        resultString =  "?" + operate + operand1
+                        return (resultString, remainingOps, remainingPrecedence, currentPrecedenceValue)
                     }
                 }
-                else{
-                    return (resultString, remainingOps)
-                    
+                else
+                {
+                    resultString =  "?" + operate + "?"
+                    return (resultString, remainingOps, remainingPrecedence, currentPrecedenceValue)
                 }
             }
         }
-        return (resultString, remainingOps)
+         return (resultString, remainingOps, remainingPrecedence, 0)
     }
+    
+    func isSetBrackets (currentValue : Int, precedenceValueOp : Int)-> Bool{
+        if currentValue > precedenceValueOp && precedenceValueOp < Int.max && currentValue < Int.max{
+            return true
+        }
+        return false
+    }
+    func removeBrackets(){
+    
+    }
+    
+    
     func clearOp(){
         opStack.removeAll()
+        precedenceStack.removeAll()
+    }
+    
+    func undoOpStack() {
+        if opStack.count > 0{
+            opStack.removeLast()
+        }
     }
 
+
+    func errorReport (operatorName : String, operand1 : Double?, operand2 : Double?)-> String?{
+        switch operatorName{
+            case "√":
+                if (operand1 == nil)
+                 {return "110"}
+                
+                if (operand1! < 0)
+                 {return "100"}
+                
+                return nil
+            case "÷":
+                if (operand1 == nil)
+                 {return "210"}
+                
+                if(operand1 == 0)
+                {return "200"}
+                
+                return nil
+            case "M":
+                if (operand1 == nil)
+                 {return "300"}
+                
+                return nil
+        default:
+                if operand1 == nil || operand2 == nil
+                {return "1000"}
+                
+                return nil
+            
+            }
+    }
+    
+    func getErrorReport()->String?{
+        if let errorReport = evaluateAndReportErrors(opStack).errorReport{
+            return errorReport
+        }
+        else
+        {
+            return nil
+        }
+    }
 }
