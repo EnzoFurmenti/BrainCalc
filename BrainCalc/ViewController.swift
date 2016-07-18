@@ -28,12 +28,17 @@ class ViewController: UIViewController {
         }
         
         set{
-            if newValue != nil{
+            if newValue != nil && (newValue?.isFinite)!{
                 display.text = "\(newValue!)"
                 isZeroOnDisplay = true
             }
             else{
-                display.text = brainCalculator.getErrorReport()
+                if let errorString = brainCalculator.getErrorReport(){
+                   display.text =  errorCodeTranslate(errorString)
+                }
+                else{
+                 display.text = "error"
+                }
                 //historyRow.text = historyRow.text! + "error"
             }
         
@@ -161,6 +166,23 @@ class ViewController: UIViewController {
     
     func addHistory(str : String){
             historyRow.text = str
+    }
+    
+    func errorCodeTranslate(errorCode : String) -> String{
+        switch errorCode {
+        case "100":
+            return "Ошибка:Кв.корень от отриц. числа!!!"
+        case "110","210":
+            return "Ошибка:Недостаточно операнд"
+        case "200":
+            return "Ошибка:Деление на 0"
+        case "300":
+            return "Ошибка:Не установлена переменная M"
+        case "1000":
+            return "Не установлено 2 операнда"
+        default:
+            return "Свяжитесь с разработчиком"
+        }
     }
 
 }

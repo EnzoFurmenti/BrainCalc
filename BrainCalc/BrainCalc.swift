@@ -64,30 +64,6 @@ class BrainCalc{
         }
     }
         
-//    var errorReport: String?{
-//        get{
-//            switch self{
-//                case .operand(_):
-//                return nil
-//                case .variable(_,_):
-//                return nil
-//                case .operandPi(_,_):
-//                return nil
-//                case .UnaryOperation(let symbol, _):
-//                    switch symbol{
-//                        case "√":
-//                            if operation == Double -> Double{
-//                                return "100"
-//                            }
-//                        return nil
-//                    }
-//                    return nil
-//                case .BinaryOperation(let symbol, _):
-//                    return nil
-//                
-//            }
-//        }
-//    }
 }
    private var precedenceOps = [String : Int] ()
    private var precedenceStack = [Int] ()
@@ -232,7 +208,7 @@ class BrainCalc{
                 if let operand1 = op1Evaluation.result {
                     let op2Evaluation = evaluate(op1Evaluation.remainingOps)
                     if let operand2 = op2Evaluation.result{
-                        let errorRep = errorReport (symbol, operand1 : nil, operand2 : nil)
+                        let errorRep = errorReport (symbol, operand1 : operand1, operand2 : operand2)
                           return (operation(operand1,operand2), remainingOps, errorRep)
                     }
                 }
@@ -377,20 +353,20 @@ class BrainCalc{
     func errorReport (operatorName : String, operand1 : Double?, operand2 : Double?)-> String?{
         switch operatorName{
             case "√":
+                if (operand1! < 0)
+                {return "100"}
+                
                 if (operand1 == nil)
                  {return "110"}
                 
-                if (operand1! < 0)
-                 {return "100"}
-                
                 return nil
             case "÷":
-                if (operand1 == nil)
-                 {return "210"}
-                
                 if(operand1 == 0)
                 {return "200"}
                 
+                if (operand1 == nil)
+                 {return "210"}
+    
                 return nil
             case "M":
                 if (operand1 == nil)
@@ -407,8 +383,8 @@ class BrainCalc{
     }
     
     func getErrorReport()->String?{
-        if let errorReport = evaluateAndReportErrors(opStack).errorReport{
-            return errorReport
+        if let errorRep = evaluateAndReportErrors(opStack).errorReport{
+            return errorRep
         }
         else
         {
